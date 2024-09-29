@@ -6,7 +6,6 @@ public class SortService
 {
     public IQueryable<T> ApplySort<T>(IQueryable<T> query, SortParams sortParams)
     {
-        // اعمال مرتب‌سازی بر اساس فیلدهای مختلف
         IOrderedQueryable<T> orderedQuery = null;
 
         foreach (var sortItem in sortParams.SortItems)
@@ -30,10 +29,8 @@ public class SortService
             }
         }
 
-        // اگر هیچ مرتب‌سازی انجام نشده باشد، از کوئری اصلی استفاده کنید
         var result = orderedQuery ?? query;
 
-        // اعمال skip و take
-        return result.Skip(sortParams.Skip??0).Take(sortParams.Take??10);
+        return result;
     }
 }

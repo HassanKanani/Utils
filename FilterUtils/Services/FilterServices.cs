@@ -1,6 +1,6 @@
 ﻿using FilterUtils.FilterModels;
-using FilterUtils.FilterModels.Sort;
 using System.Linq.Expressions;
+using Utils.Pagination;
 namespace FilterUtils.Services;
 public class FilterServices
 {
@@ -11,63 +11,63 @@ public class FilterServices
         _sortService = sortService;
     }
 
-    public IQueryable<T> ApplyDynamicFilter<T>(IQueryable<T> query, DynamicFilter? filter, SortParams? sortParams)
+    public PagedResult<T> ApplyDynamicFilter<T>(IQueryable<T> query, Filter filter)
     {
+        query = filter is not null
+            ? ApplyFilters(query, filter)
+            : query;
 
-        if(filter !=null) {
-        foreach (var FilterItem in filter.FilterItems)
+        return query.GetPaged(filter?.Page ?? 1, filter?.PageSize ?? 25);
+    }
+
+    private IQueryable<T> ApplyFilters<T>(IQueryable<T> query, Filter filter)
+    {
+        if (filter.DynamicFilterParams is not null)
         {
-            if (FilterItem.Value != null)
+            foreach (var filterItem in filter.DynamicFilterParams.FilterItems)
             {
-                var property = typeof(T).GetProperty(FilterItem.Name);
-                if (property != null)
-                {
-                    var parameter = Expression.Parameter(typeof(T), "x");
-                    var propertyAccess = Expression.MakeMemberAccess(parameter, property);
-                    var constant = Expression.Constant(Convert.ChangeType(FilterItem.Value, property.PropertyType));
-
-                    // ایجاد مقایسه بر اساس نوع خاصیت و نوع مقایسه
-                    Expression comparison;
-
-                    switch (FilterItem.Comparison)
-                    {
-                        case ComparisonType.Equals:
-                            comparison = Expression.Equal(propertyAccess, constant);
-                            break;
-                        case ComparisonType.NotEquals:
-                            comparison = Expression.NotEqual(propertyAccess, constant);
-                            break;
-                        case ComparisonType.GreaterThan:
-                            comparison = Expression.GreaterThan(propertyAccess, constant);
-                            break;
-                        case ComparisonType.GreaterThanOrEqual:
-                            comparison = Expression.GreaterThanOrEqual(propertyAccess, constant);
-                            break;
-                        case ComparisonType.LessThan:
-                            comparison = Expression.LessThan(propertyAccess, constant);
-                            break;
-                        case ComparisonType.LessThanOrEqual:
-                            comparison = Expression.LessThanOrEqual(propertyAccess, constant);
-                            break;
-                        case ComparisonType.Contains:
-                            comparison = Expression.Call(propertyAccess, typeof(string).GetMethod("Contains", new[] { typeof(string) }), constant);
-                            break;
-                        default:
-                            comparison = Expression.Equal(propertyAccess, constant);
-                            break;
-                    }
-
-                    var lambda = Expression.Lambda<Func<T, bool>>(comparison, parameter);
-                    query = query.Where(lambda);
-                }
+                query = filterItem.Value is not null
+                    ? ApplyFilterItem(query, filterItem)
+                    : query;
             }
         }
-        }
-        if (sortParams != null)
-        {
 
-            query = _sortService.ApplySort(query, sortParams);
+        // اعمال مرتب‌سازی در صورت وجود
+        if (filter.SortParams is not null)
+        {
+            query = _sortService.ApplySort(query, filter.SortParams);
+        }
+
+        return query;
+    }
+
+    private IQueryable<T> ApplyFilterItem<T>(IQueryable<T> query, FilterItem filterItem)
+    {
+        var property = typeof(T).GetProperty(filterItem.Name);
+        if (property != null)
+        {
+            var parameter = Expression.Parameter(typeof(T), "x");
+            var propertyAccess = Expression.MakeMemberAccess(parameter, property);
+            var constant = Expression.Constant(Convert.ChangeType(filterItem.Value, property.PropertyType));
+            Expression comparison = BuildComparison(propertyAccess, constant, filterItem.Comparison);
+            var lambda = Expression.Lambda<Func<T, bool>>(comparison, parameter);
+            return query.Where(lambda);
         }
         return query;
     }
+    private Expression BuildComparison(Expression propertyAccess, Expression constant, ComparisonType comparisonType)
+    {
+        return comparisonType switch
+        {
+            ComparisonType.Equals => Expression.Equal(propertyAccess, constant),
+            ComparisonType.NotEquals => Expression.NotEqual(propertyAccess, constant),
+            ComparisonType.GreaterThan => Expression.GreaterThan(propertyAccess, constant),
+            ComparisonType.GreaterThanOrEqual => Expression.GreaterThanOrEqual(propertyAccess, constant),
+            ComparisonType.LessThan => Expression.LessThan(propertyAccess, constant),
+            ComparisonType.LessThanOrEqual => Expression.LessThanOrEqual(propertyAccess, constant),
+            ComparisonType.Contains => Expression.Call(propertyAccess, typeof(string).GetMethod("Contains", new[] { typeof(string) }), constant),
+            _ => Expression.Equal(propertyAccess, constant) 
+        };
+    }
 }
+
