@@ -3,6 +3,7 @@ using Utils.Models;
 using NPOI.HSSF.UserModel;
 using NPOI.SS.UserModel;
 using NPOI.XSSF.UserModel;
+using System.ComponentModel.DataAnnotations;
 namespace Utils.ExcelReader;
 
 public class GenericExcelReader<ClassType> where ClassType : class, new()
@@ -40,7 +41,7 @@ public class GenericExcelReader<ClassType> where ClassType : class, new()
             IRow row = sheet.GetRow(i);
             var rows = new List<string>();
 
-            var properties = typeof(ClassType).GetProperties();
+            var properties = typeof(ClassType).GetProperties().Where(p=>!p.GetCustomAttributes(typeof(KeyAttribute),true).Any()).ToArray();
             if (row != null)
             {
                 ClassType excelDto = new ClassType();
