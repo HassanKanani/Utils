@@ -25,7 +25,7 @@ public static class StringTools
         Regex regex = new Regex(@"^\+?\d{10,15}$");
         return regex.IsMatch(phoneNumber);
     }
-    public static bool IsNullOrEmpty(this Guid Value)
+    public static bool IsEmpty(this Guid Value)
     {
         if(Value==Guid.Empty) return true;
         else return false;

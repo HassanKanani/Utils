@@ -1,22 +1,13 @@
 ﻿using FilterUtils.FilterModels;
+using FilterUtils.FilterModels.Sort;
 using System.Linq.Expressions;
 using Utils.Pagination;
 namespace FilterUtils.Services;
 public class FilterServices
 {
-    private readonly SortService _sortService;
-
-    public FilterServices(SortService sortService)
-    {
-        _sortService = sortService;
-    }
-
     public PagedResult<T> ApplyDynamicFilter<T>(IQueryable<T> query, Filter filter)
     {
-        query = filter is not null
-            ? ApplyFilters(query, filter)
-            : query;
-
+        query = filter is not null? ApplyFilters(query, filter) : query;
         return query.GetPaged(filter?.Page ?? 1, filter?.PageSize ?? 25);
     }
 
@@ -26,16 +17,13 @@ public class FilterServices
         {
             foreach (var filterItem in filter.DynamicFilterParams.FilterItems)
             {
-                query = filterItem.Value is not null
-                    ? ApplyFilterItem(query, filterItem)
-                    : query;
+                query = filterItem.Value is not null? ApplyFilterItem(query, filterItem): query;
             }
         }
 
-        // اعمال مرتب‌سازی در صورت وجود
         if (filter.SortParams is not null)
         {
-            query = _sortService.ApplySort(query, filter.SortParams);
+            query = ApplySort(query, filter.SortParams);
         }
 
         return query;
@@ -69,5 +57,36 @@ public class FilterServices
             _ => Expression.Equal(propertyAccess, constant) 
         };
     }
+    public IQueryable<T> ApplySort<T>(IQueryable<T> query, SortParams sortParams)
+    {
+        IOrderedQueryable<T> orderedQuery = null;
+
+        foreach (var sortItem in sortParams.SortItems)
+        {
+            var property = typeof(T).GetProperty(sortItem.Name);
+            if (property != null)
+            {
+                var parameter = Expression.Parameter(typeof(T), "x");
+                var propertyAccess = Expression.MakeMemberAccess(parameter, property);
+
+                var lambda = Expression.Lambda<Func<T, object>>(Expression.Convert(propertyAccess, typeof(object)), parameter);
+
+                if (orderedQuery == null)
+                {
+                    orderedQuery = sortItem.IsDescending ? query.OrderByDescending(lambda) : query.OrderBy(lambda);
+                }
+                else
+                {
+                    orderedQuery = sortItem.IsDescending ? orderedQuery.ThenByDescending(lambda) : orderedQuery.ThenBy(lambda);
+                }
+            }
+        }
+
+        var result = orderedQuery ?? query;
+
+        return result;
+    }
+
+
 }
 

@@ -3,13 +3,16 @@ using Utils.Models;
 using NPOI.HSSF.UserModel;
 using NPOI.SS.UserModel;
 using NPOI.XSSF.UserModel;
-using System.ComponentModel.DataAnnotations;
 namespace Utils.ExcelReader;
 
-public class GenericExcelReader<ClassType> where ClassType : class, new()
+public static  class GenericExcelReader<ClassType> where ClassType : class, new()
 {
-    public async Task<ApiResponse<List<ClassType>>> GenericExcelReaderBaseic(IFormFile file)
+    public static async Task<ApiResponse<List<ClassType>>> GenericExcelReaderBaseic(IFormFile file)
     {
+        try
+        {
+
+       
         List<ClassType> list = new();
         if (file == null || file.Length == 0)
             return ApiResponse<List<ClassType>>.CreateErrorResponse("هیچ فایلی انتخاب نشده است.");
@@ -21,11 +24,11 @@ public class GenericExcelReader<ClassType> where ClassType : class, new()
 
             if (file.FileName.EndsWith(".xlsx"))
             {
-                workbook = new XSSFWorkbook(stream); 
+                workbook = new XSSFWorkbook(stream);
             }
             else if (file.FileName.EndsWith(".xls"))
             {
-                workbook = new HSSFWorkbook(stream); 
+                workbook = new HSSFWorkbook(stream);
             }
             else
             {
@@ -36,12 +39,12 @@ public class GenericExcelReader<ClassType> where ClassType : class, new()
 
         ISheet sheet = workbook.GetSheetAt(0);
 
-        for (int i = 0; i <= sheet.LastRowNum; i++)
+        for (int i = 1; i <= sheet.LastRowNum; i++)
         {
             IRow row = sheet.GetRow(i);
             var rows = new List<string>();
 
-            var properties = typeof(ClassType).GetProperties().Where(p=>!p.GetCustomAttributes(typeof(KeyAttribute),true).Any()).ToArray();
+            var properties = typeof(ClassType).GetProperties();
             if (row != null)
             {
                 ClassType excelDto = new ClassType();
@@ -67,6 +70,98 @@ public class GenericExcelReader<ClassType> where ClassType : class, new()
         }
 
         return ApiResponse<List<ClassType>>.CreateSuccessResponse(list, "فایل پردازش شد.");
+
+        }
+        catch (Exception)
+        {
+
+            throw;
+        }
+    }
+
+    public static async Task<ApiResponse<List<ClassType>>> GenericExcelReaderBaseic(string filePath)
+    {
+        List<ClassType> list = new();
+
+        // بررسی وجود فایل
+        if (string.IsNullOrEmpty(filePath) || !File.Exists(filePath))
+            return ApiResponse<List<ClassType>>.CreateErrorResponse("فایل انتخاب شده وجود ندارد.");
+
+        IWorkbook workbook;
+        using (var stream = new FileStream(filePath, FileMode.Open, FileAccess.Read))
+        {
+            if (filePath.EndsWith(".xlsx"))
+            {
+                workbook = new XSSFWorkbook(stream);
+            }
+            else if (filePath.EndsWith(".xls"))
+            {
+                workbook = new HSSFWorkbook(stream);
+            }
+            else
+            {
+                return ApiResponse<List<ClassType>>.CreateErrorResponse("فایل اکسل معتبر نیست.");
+            }
+        }
+
+        ISheet sheet = workbook.GetSheetAt(0);
+
+        for (int i = 0; i <= sheet.LastRowNum; i++)
+        {
+            IRow row = sheet.GetRow(i);
+            if (row != null)
+            {
+                ClassType excelDto = new ClassType();
+                var properties = typeof(ClassType).GetProperties().Where(v=>v.Name.ToLower()!="id").ToArray();
+
+                for (int j = 0; j < properties.Length && j < row.LastCellNum; j++)
+                {
+                    var cellValue = row.GetCell(j)?.ToString();
+                    var property = properties[j];
+
+                    if (property.PropertyType == typeof(int))
+                    {
+                        if (int.TryParse(cellValue, out int intValue))
+                        {
+                            property.SetValue(excelDto, intValue);
+                        }
+                    }
+                    else
+                    {
+                        property.SetValue(excelDto, cellValue);
+                    }
+                }
+
+                list.Add(excelDto);
+            }
+        }
+
+        return ApiResponse<List<ClassType>>.CreateSuccessResponse(list, "فایل پردازش شد.");
+    }
+    public static async Task<string> SaveFileAndReturnPath( IFormFile file)
+    {
+        try
+        {
+            if (file == null || file.Length == 0) throw new Exception("هیچ فایلی انتخاب نشده است.");
+
+            var path = Path.Combine(Directory.GetCurrentDirectory(), "files");
+            if (!Directory.Exists(path))
+            {
+                Directory.CreateDirectory(path);
+            }
+            var filepath = Path.Combine(path, DateTime.Now.ToString("yyyy-dd-M--HH-mm-ss") + System.IO.Path.GetExtension(file.FileName));
+            using (var stream = new FileStream(filepath, FileMode.Create, FileAccess.ReadWrite))
+            {
+                await file.CopyToAsync(stream);
+
+            }
+            return filepath;
+        }
+        catch (Exception)
+        {
+
+            throw;
+        }
 
 
     }

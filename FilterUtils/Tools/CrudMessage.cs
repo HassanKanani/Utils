@@ -78,4 +78,8 @@ public static class CrudMessage
     {
         return $" چیدمان {entityName} با موفقیت انجام شد ";
     }
+    public static string Status(string entityName)
+    {
+        return $"وضعیت به {entityName} تغییر کرد ";
+    }
 }
