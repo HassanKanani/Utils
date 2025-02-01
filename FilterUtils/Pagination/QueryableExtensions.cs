@@ -1,10 +1,10 @@
 ﻿
 namespace Utils.Pagination;
-public static class QueryableExtensions
+public  class QueryableExtensions<T>
 {
-    public static PagedResult<T> GetPaged<T>(this IQueryable<T> query, int page, int pageSize)
+    public  PagedResult<T> GetPaged( IQueryable<T> query, int page, int pageSize)
     {
-        var result = new PagedResult<T>();
+        PagedResult<T> result = new ();
 
         result.CurrentPage = page;
         result.PageSize = pageSize;
@@ -13,6 +13,19 @@ public static class QueryableExtensions
                             .Take(pageSize)
                             .ToList();
         
+        return result;
+    }
+    public PagedResult<T> GetPaged(List<T> query, int page, int pageSize)
+    {
+        PagedResult<T> result = new();
+
+        result.CurrentPage = page;
+        result.PageSize = pageSize;
+        result.TotalCount = query.Count();
+        result.Items = query.Skip((page - 1) * pageSize)
+                            .Take(pageSize)
+                            .ToList();
+
         return result;
     }
 }

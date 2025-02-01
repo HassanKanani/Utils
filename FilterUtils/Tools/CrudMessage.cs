@@ -60,7 +60,7 @@ public static class CrudMessage
     }
     public static string BlankFile (string entityName)
     {
-        return $" {entityName} بارگزاری نشده است";
+        return $" {entityName} بارگذاری نشده است";
     }
     public static string NullList(string entityName)
     {
@@ -81,5 +81,13 @@ public static class CrudMessage
     public static string Status(string entityName)
     {
         return $"وضعیت به {entityName} تغییر کرد ";
+    }
+    public static string NotEditable(string entityName)
+    {
+        return $"{entityName} قابل ویرایش نیست  ";
+    }
+    public static string NotAccess(string entityName)
+    {
+        return $"دسترسی شما به {entityName} محدود است";
     }
 }

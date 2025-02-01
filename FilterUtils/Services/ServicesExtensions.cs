@@ -1,16 +1,19 @@
-﻿using Microsoft.Extensions.Configuration;
+﻿using FilterUtils.Services;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using System.Reflection;
 using Utils.Common;
+using Utils.Pagination;
 namespace Utils.Services;
 public static class ServicesExtensions
 {
     public static void ExtenalServicesExtention(this IServiceCollection service, IConfiguration configuration, Assembly[] CurrentDomainAssembly)
     {
         #region IOC Container AutoFact
-       
+        service.AddScoped(typeof(QueryableExtensions<>));
+        service.AddScoped(typeof(FilterServices<>));
         #region scopeRegiste
-         Type scopedRegistration = typeof(ScopedRegistrationAttribute);
+        Type scopedRegistration = typeof(ScopedRegistrationAttribute);
         var scopedtypes = CurrentDomainAssembly
           .SelectMany(s => s.GetTypes())
           .Where(p => p.IsDefined(scopedRegistration, true) && !p.IsInterface).Select(s => new

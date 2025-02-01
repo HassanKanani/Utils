@@ -5,77 +5,99 @@ using NPOI.SS.UserModel;
 using NPOI.XSSF.UserModel;
 namespace Utils.ExcelReader;
 
-public static  class GenericExcelReader<ClassType> where ClassType : class, new()
+public static class GenericExcelReader<ClassType> where ClassType : class, new()
 {
     public static async Task<ApiResponse<List<ClassType>>> GenericExcelReaderBaseic(IFormFile file)
     {
         try
         {
+            List<ClassType> list = new();
+            if (file == null || file.Length == 0)
+                return ApiResponse<List<ClassType>>.CreateErrorResponse("هیچ فایلی انتخاب نشده است.");
 
-       
-        List<ClassType> list = new();
-        if (file == null || file.Length == 0)
-            return ApiResponse<List<ClassType>>.CreateErrorResponse("هیچ فایلی انتخاب نشده است.");
-        IWorkbook workbook;
-        using (var stream = new MemoryStream())
-        {
-            await file.CopyToAsync(stream);
-            stream.Position = 0;
-
-            if (file.FileName.EndsWith(".xlsx"))
+            IWorkbook workbook;
+            using (var stream = new MemoryStream())
             {
-                workbook = new XSSFWorkbook(stream);
-            }
-            else if (file.FileName.EndsWith(".xls"))
-            {
-                workbook = new HSSFWorkbook(stream);
-            }
-            else
-            {
-                return ApiResponse<List<ClassType>>.CreateErrorResponse("فایل اکسل معتبر نیست.");
+                await file.CopyToAsync(stream);
+                stream.Position = 0;
 
-            }
-        }
-
-        ISheet sheet = workbook.GetSheetAt(0);
-
-        for (int i = 1; i <= sheet.LastRowNum; i++)
-        {
-            IRow row = sheet.GetRow(i);
-            var rows = new List<string>();
-
-            var properties = typeof(ClassType).GetProperties();
-            if (row != null)
-            {
-                ClassType excelDto = new ClassType();
-                for (int j = 0; j < properties.Length && j < row.LastCellNum; j++)
+                if (file.FileName.EndsWith(".xlsx"))
                 {
-                    var cellValue = row.GetCell(j)?.ToString();
-                    var property = properties[j];
+                    workbook = new XSSFWorkbook(stream);
+                }
+                else if (file.FileName.EndsWith(".xls"))
+                {
+                    workbook = new HSSFWorkbook(stream);
+                }
+                else
+                {
+                    return ApiResponse<List<ClassType>>.CreateErrorResponse("فایل اکسل معتبر نیست.");
+                }
+            }
 
-                    if (property.PropertyType == typeof(int))
+            ISheet sheet = workbook.GetSheetAt(0);
+
+            // خواندن نام ستون‌ها از خط اول (Header)
+            IRow headerRow = sheet.GetRow(0);
+            var headerColumns = new Dictionary<int, string>();
+            for (int col = 0; col < headerRow.LastCellNum; col++)
+            {
+                var columnName = headerRow.GetCell(col)?.ToString();
+                if (!string.IsNullOrEmpty(columnName))
+                {
+                    headerColumns[col] = columnName;
+                }
+            }
+
+            // خواندن داده‌ها از خط‌های بعدی
+            for (int i = 1; i <= sheet.LastRowNum; i++)
+            {
+                IRow row = sheet.GetRow(i);
+                if (row != null)
+                {
+                    ClassType excelDto = new();
+                    var properties = typeof(ClassType).GetProperties();
+
+                    for (int j = 0; j < row.LastCellNum; j++)
                     {
-                        if (int.TryParse(cellValue, out int intValue))
+                        var cellValue = row.GetCell(j)?.ToString();
+
+                        // پیدا کردن پراپرتی مرتبط با ستون
+                        if (headerColumns.TryGetValue(j, out string columnName))
                         {
-                            property.SetValue(excelDto, intValue);
+                            var property = properties.FirstOrDefault(p => p.Name.Equals(columnName, StringComparison.OrdinalIgnoreCase));
+                            if (property != null)
+                            {
+                                if (property.PropertyType == typeof(int))
+                                {
+                                    if (int.TryParse(cellValue, out int intValue))
+                                    {
+                                        property.SetValue(excelDto, intValue);
+                                    }
+                                }
+                                else if (property.PropertyType == typeof(byte))
+                                {
+                                    if (byte.TryParse(cellValue, out byte byteValue))
+                                    {
+                                        property.SetValue(excelDto, byteValue);
+                                    }
+                                }
+                                else
+                                {
+                                    property.SetValue(excelDto, cellValue);
+                                }
+                            }
                         }
                     }
-                    else
-                    {
-                        property.SetValue(excelDto, cellValue);
-                    }
+                    list.Add(excelDto);
                 }
-                list.Add(excelDto);
             }
-        }
 
-        return ApiResponse<List<ClassType>>.CreateSuccessResponse(list, "فایل پردازش شد.");
-
+            return ApiResponse<List<ClassType>>.CreateSuccessResponse(list, "فایل پردازش شد.");
         }
-        catch (Exception)
+        catch (Exception ex)
         {
-
-            throw;
+            return ApiResponse<List<ClassType>>.CreateErrorResponse($"خطا در پردازش فایل: {ex.Message}");
         }
     }
 
@@ -112,7 +134,7 @@ public static  class GenericExcelReader<ClassType> where ClassType : class, new(
             if (row != null)
             {
                 ClassType excelDto = new ClassType();
-                var properties = typeof(ClassType).GetProperties().Where(v=>v.Name.ToLower()!="id").ToArray();
+                var properties = typeof(ClassType).GetProperties().Where(v => v.Name.ToLower() != "id").ToArray();
 
                 for (int j = 0; j < properties.Length && j < row.LastCellNum; j++)
                 {
@@ -138,7 +160,7 @@ public static  class GenericExcelReader<ClassType> where ClassType : class, new(
 
         return ApiResponse<List<ClassType>>.CreateSuccessResponse(list, "فایل پردازش شد.");
     }
-    public static async Task<string> SaveFileAndReturnPath( IFormFile file)
+    public static async Task<string> SaveFileAndReturnPath(IFormFile file)
     {
         try
         {
