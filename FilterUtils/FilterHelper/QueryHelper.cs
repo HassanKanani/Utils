@@ -36,24 +36,22 @@ public static class QueryHelper
     }
 
 }
-//var queryParams = new QueryParameters<User>
-//{
-//    Filter = u => u.Age > 25, // کاربران بالای ۲۵ سال
-//    OrderBy = u => u.Name, // مرتب‌سازی بر اساس نام
-//    OrderDescending = false,
-//    PageNumber = 1,
-//    PageSize = 5
-//};
 
-//    var pagedUsers = ApplyQuery(_context.Users, queryParams, u => new UserDto
-//    {
-//        Name = u.Name,
-//        Age = u.Age
-//    });
+    //public Task<PagedResult<UserResponse>> DynamicFilter()
+    //{
+    //    var queryParams = new QueryParameters<User>
+    //    {
+    //        Filter = u => u.UseName == "string",
+    //        OrderBy = u => u.Name,
+    //        OrderDescending = false,
+    //        PageNumber = 1,
+    //        PageSize = 10
+    //    };
+    //    var pagedUsers = QueryHelper.ApplyQuery<User, UserResponse>(
+    //_userRepository.TableNoTracking,
+    //queryParams,
+    //users => _mapper.Map<UserResponse>(users)
+    //   );
 
-//// نمایش خروجی
-//Console.WriteLine($"Total Users: {pagedUsers.TotalCount}");
-//foreach (var user in pagedUsers.Items)
-//{
-//    Console.WriteLine($"Name: {user.Name}, Age: {user.Age}");
-//}
+    //    return Task.FromResult(pagedUsers);
+    //}
