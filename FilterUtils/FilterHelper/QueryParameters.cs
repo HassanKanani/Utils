@@ -1,10 +1,5 @@
-﻿
-
-namespace Utils.FilterHelper;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Linq.Expressions;
+﻿using System.Linq.Expressions;
+using Utils.FilterHelper;
 using Utils.Models;
 public class QueryParameters<T>
 {
@@ -22,16 +17,13 @@ public class QueryParameters<T>
             FilterExpression = x => true;
             return;
         }
-
         var parameter = Expression.Parameter(typeof(T), "x");
         Expression body = Expression.Constant(true);
-
         foreach (var filter in Filters)
         {
             Expression property = GetPropertyExpression(parameter, filter.PropertyName);
             object convertedValue = Convert.ChangeType(filter.Value, property.Type);
             Expression valueExpression = Expression.Constant(convertedValue);
-
             Expression comparison = filter.Operator switch
             {
                 FilterOperator.Equals => Expression.Equal(property, valueExpression),
@@ -43,10 +35,8 @@ public class QueryParameters<T>
                 FilterOperator.Contains => Expression.Call(property, typeof(string).GetMethod("Contains", new[] { typeof(string) }), valueExpression),
                 _ => throw new ArgumentException("Operator نامعتبر است")
             };
-
             body = Expression.AndAlso(body, comparison);
         }
-
         FilterExpression = Expression.Lambda<Func<T, bool>>(body, parameter);
     }
 
@@ -61,10 +51,7 @@ public class QueryParameters<T>
         return property;
     }
 }
-
-//use
-
-//     public async Task<PagedResult<UserResponse>> CustomFilter(QueryParametersInputDto inputDto)
+//public async Task<PagedResult<UserResponse>> CustomFilter(QueryParametersInputDto inputDto)
 //{
 //    var queryParams = new QueryParameters<User>
 //    {
@@ -82,7 +69,7 @@ public class QueryParameters<T>
 
 //    queryParams.ApplyFilters();
 
-//    var query = _repository.TableNoTracking;
+//    var query = _repository.TableNoTracking.Include(c => c.UserCategory).AsQueryable();
 
 //    if (queryParams.FilterExpression != null)
 //    {
@@ -116,7 +103,8 @@ public class QueryParameters<T>
 //            Id = p.Data.Id,
 //            Name = p.Data.Name,
 //            UseName = p.Data.UseName,
-//            Password = p.Data.Password
+//            Password = p.Data.Password,
+//            CategoryName = p.Data.UserCategory.Name ?? null,
 //        },
 //        p.RecordNumber
 //    )).ToList();
