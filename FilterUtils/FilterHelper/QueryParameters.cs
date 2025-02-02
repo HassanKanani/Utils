@@ -6,14 +6,9 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
 using Utils.Models;
-
-// در صورت استفاده از Newtonsoft.Json:
-// using Newtonsoft.Json;
-
 public class QueryParameters<T>
 {
     public List<FilterCriteria> Filters { get; set; } = new List<FilterCriteria>();
-    // [JsonIgnore]
     public Expression<Func<T, bool>> FilterExpression { get; private set; }
     public string OrderBy { get; set; }
     public bool OrderDescending { get; set; }
@@ -67,3 +62,67 @@ public class QueryParameters<T>
     }
 }
 
+//use
+
+//     public async Task<PagedResult<UserResponse>> CustomFilter(QueryParametersInputDto inputDto)
+//{
+//    var queryParams = new QueryParameters<User>
+//    {
+//        OrderBy = inputDto.OrderBy,
+//        OrderDescending = inputDto.OrderDescending,
+//        PageNumber = inputDto.PageNumber,
+//        PageSize = inputDto.PageSize,
+//        Filters = inputDto.Filters.Select(f => new FilterCriteria
+//        {
+//            PropertyName = f.PropertyName,
+//            Operator = f.Operator,
+//            Value = f.Value
+//        }).ToList()
+//    };
+
+//    queryParams.ApplyFilters();
+
+//    var query = _repository.TableNoTracking;
+
+//    if (queryParams.FilterExpression != null)
+//    {
+//        query = query.Where(queryParams.FilterExpression);
+//    }
+//    int totalCount = query.Count();
+
+//    if (!string.IsNullOrEmpty(queryParams.OrderBy))
+//    {
+//        var parameter = Expression.Parameter(typeof(User), "x");
+//        var property = Expression.Property(parameter, queryParams.OrderBy);
+//        var lambda = Expression.Lambda<Func<User, object>>(Expression.Convert(property, typeof(object)), parameter);
+
+//        query = queryParams.OrderDescending
+//            ? query.OrderByDescending(lambda)
+//            : query.OrderBy(lambda);
+//    }
+
+//    var allData = query.ToList();
+
+//    var pagedItems = allData
+//    .Skip((queryParams.PageNumber - 1) * queryParams.PageSize)
+//    .Take(queryParams.PageSize)
+//        .Select((item, index) => new PagedItem<User>(item, index + 1 + (queryParams.PageNumber - 1) * queryParams.PageSize))
+//        .ToList();
+
+
+//    var pagedItemsDto = pagedItems.Select(p => new PagedItem<UserResponse>(
+//        new UserResponse
+//        {
+//            Id = p.Data.Id,
+//            Name = p.Data.Name,
+//            UseName = p.Data.UseName,
+//            Password = p.Data.Password
+//        },
+//        p.RecordNumber
+//    )).ToList();
+
+//    var result = new PagedResult<UserResponse>(pagedItemsDto, totalCount, queryParams.PageNumber, queryParams.PageSize);
+
+//    return result;
+
+//}
