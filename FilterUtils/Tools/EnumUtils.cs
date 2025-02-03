@@ -60,13 +60,16 @@ public static class EnumUtils
     }
     public static TEnum? GetEnumValueOrNull<TEnum>(int value) where TEnum : struct, Enum
     {
-        // بررسی اینکه مقدار داده شده در مقادیر enum موجود است یا خیر
         if (Enum.IsDefined(typeof(TEnum), value))
         {
             return (TEnum)Enum.ToObject(typeof(TEnum), value);
         }
 
-        // اگر موجود نبود، null برگرداند
+        //99 is null
+       else if (Enum.IsDefined(typeof(TEnum), 99))
+        {
+            return (TEnum)Enum.ToObject(typeof(TEnum), value);
+        }
         return null;
     }
 
