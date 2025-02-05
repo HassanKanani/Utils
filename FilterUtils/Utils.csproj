@@ -5,7 +5,7 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <Authors>Kanani</Authors>
-    <Version>3.0.1</Version>
+    <Version>3.2.2</Version>
     <Title>Utils</Title>
     <Product>Kanani</Product>
     <Description>My Tools</Description>
