@@ -15,5 +15,7 @@ public class MessageProducer
         var sendEndpoint = await _bus.GetSendEndpoint(new Uri($"queue:{queueName}"));
         await sendEndpoint.Send(message);
     }
+    //builder.Services.AddScoped<SomeService>();
+    //builder.Services.AddMassTransitServicesT<SomeConsumer>("localhost", "guest", "3688", "Myqueue");
 }
 
