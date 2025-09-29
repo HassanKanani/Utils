@@ -1,23 +1,27 @@
 ﻿using AutoMapper;
 using Utils.Models;
-namespace Automapper
+namespace Automapper;
+
+public class MappingProfile : Profile
 {
-    public class MappingProfile : Profile
+    public MappingProfile()
     {
-        private const string Value = "IAutoMapper`2";
+        var type = typeof(IMapMark);
+        var types = AppDomain.CurrentDomain.GetAssemblies()
+            .SelectMany(s => s.GetTypes())
+            .Where(p => type.IsAssignableFrom(p) && p.IsClass && p.IsPublic);
 
-        public MappingProfile()
+        foreach (var entity in types)
         {
-            var type = typeof(IMapMark);
-            var types = AppDomain.CurrentDomain.GetAssemblies().SelectMany(s => s.GetTypes()).Where(p => type.IsAssignableFrom(p) && p.IsPublic && p.IsClass);
-            foreach (var entity in types)
-            {
-                List<Type> res = entity.GetInterfaces().First(n => n.Name.Equals(Value)).GetGenericArguments().ToList();
-                var f = res[0];
-                var s = res[1];
-                CreateMap(f, s).ReverseMap();
-            }
+            var mapInterface = entity.GetInterfaces()
+                .FirstOrDefault(i => i.IsGenericType && i.GetGenericTypeDefinition() == typeof(IAutoMapper<>));
 
+            if (mapInterface == null) continue;
+
+            var sourceType = mapInterface.GetGenericArguments()[0];
+            var destinationType = entity;
+
+            CreateMap(sourceType, destinationType).ReverseMap();
         }
     }
 }
