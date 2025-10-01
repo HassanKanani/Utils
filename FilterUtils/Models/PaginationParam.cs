@@ -1,5 +1,6 @@
 ﻿using System.Linq.Expressions;
 using Utils.Models;
+using static MassTransit.Logging.LogCategoryName;
 namespace Utils.FilterHelper;
 public class PaginationParam
 {
@@ -53,8 +54,13 @@ public static class FilterTools<T>
             return null;
         }
     }
+    private static (IQueryable<T>, int) Paging(IQueryable<T> query, PaginationParam paginationParam)
+    {
+        return FilterTools<T>.ApplySortAndPagination(query, paginationParam);
+    }
 
-    public class PagedResultT<T>
+} 
+public class PagedResultT<T>
     {
         public List<PagedItem<T>> Items { get; set; } = [];
         public int TotalCount { get; set; }
@@ -83,4 +89,3 @@ public static class FilterTools<T>
             return list;
         }
     }
-}
