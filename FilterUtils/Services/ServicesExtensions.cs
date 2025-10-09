@@ -43,6 +43,7 @@ public static class ServicesExtensions
         #region Other Srvice
         service.AddAutoMapper(typeof(Automapper.MappingProfile));
         #endregion
+
     }
 
 }
